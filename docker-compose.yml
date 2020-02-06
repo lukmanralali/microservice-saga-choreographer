@@ -1,0 +1,88 @@
+version: '3.0'
+services:
+  zookeeper-saga-choreographer:
+    container_name: zookeeper_saga_choreographer
+    image: 'bitnami/zookeeper:3'
+    ports:
+      - 2181:2181
+    volumes:
+      - zookeeper_data:/bitnami
+    env_file:
+      - zookeper.env
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.1
+  kafka-saga-choreographer:
+    container_name: kafka_saga_choreographer
+    image: 'bitnami/kafka:2'
+    ports:
+      - 9092:9092
+    volumes:
+      - kafka_data:/bitnami
+    env_file:
+      - kafka.env
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.2
+    depends_on:
+      - zookeeper-saga
+  rabbitmq-saga-choreographer:
+    container_name: rabbitmq_saga_choreographer
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - ./rabbitmq/rabbitmq-isolated.conf:/etc/rabbitmq/rabbitmq.config
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.3
+  kong-database-saga-choreographer:
+    image: postgres:12-alpine
+    container_name: kong_database_saga_choreographer
+    ports:
+      - 5432:5432
+    env_file:
+      - kong_db_postgre.env
+    volumes:
+      - "db-data-kong-postgres:/var/lib/postgresql/data"
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.4
+  kong-saga-choreographer:
+    container_name: kong_saga_choreographer
+    image: kong:2.0.0-alpine
+    ports:
+      - 8000:8000
+      - 8443:8443
+      - 8001:8001
+      - 7946:7946
+      - 7946:7946/udp
+    env_file:
+      - kong_db_postgre.env
+    depends_on:
+      - kong-database-saga-choreographer
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.5
+  kong-dashboard-saga-choreographer:
+    image: pgbi/kong-dashboard:v3
+    container_name: kong_dashboard_saga_choreographer
+    ports:
+      - 8070:8080
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.6
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+  db-data-kong-postgres:
+    driver: local
+networks:
+  saga_choreographer:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.168.0.0/16
