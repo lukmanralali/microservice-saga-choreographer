@@ -49,30 +49,64 @@ services:
     networks:
       saga_choreographer:
         ipv4_address: 172.168.1.4
+  kong-migrations:
+    image: kong:1.5.0-alpine
+    command: kong migrations bootstrap
+    depends_on:
+      - kong-database-saga-choreographer
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_DATABASE: kong
+      KONG_PG_HOST: kong-database-saga-choreographer
+      KONG_PG_USER: kong
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.5
+    restart: on-failure
+  kong-migrations-up:
+    image: kong:1.5.0-alpine
+    command: kong migrations up && kong migrations finish
+    depends_on:
+      - kong-database-saga-choreographer
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_DATABASE: kong
+      KONG_PG_HOST: kong-database-saga-choreographer
+      KONG_PG_USER: kong
+    networks:
+      saga_choreographer:
+        ipv4_address: 172.168.1.6
+    restart: on-failure
   kong-saga-choreographer:
     container_name: kong_saga_choreographer
-    image: kong:2.0.0-alpine
+    image: kong:1.5.0-alpine
     ports:
-      - 8000:8000
+      - 8002:8000
       - 8443:8443
       - 8001:8001
       - 7946:7946
       - 7946:7946/udp
     env_file:
-      - ./env_file/kong_db_postgre.env
+      - ./env_file/kong.env
+    links:
+      - kong-database-saga-choreographer
     depends_on:
       - kong-database-saga-choreographer
     networks:
       saga_choreographer:
-        ipv4_address: 172.168.1.5
+        ipv4_address: 172.168.1.7
+    restart: on-failure
   kong-dashboard-saga-choreographer:
     image: pgbi/kong-dashboard:v3
     container_name: kong_dashboard_saga_choreographer
+    command: "start --kong-url http://kong-saga-choreographer:8001"
     ports:
       - 8070:8080
+    depends_on:
+      - kong-saga-choreographer
     networks:
       saga_choreographer:
-        ipv4_address: 172.168.1.6
+        ipv4_address: 172.168.1.8
 volumes:
   zookeeper_data:
     driver: local
