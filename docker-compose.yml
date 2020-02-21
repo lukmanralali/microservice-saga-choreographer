@@ -1,31 +1,32 @@
 version: '3.0'
 services:
-  zookeeper-saga-choreographer:
-    container_name: zookeeper_saga_choreographer
-    image: 'bitnami/zookeeper:3'
-    ports:
-      - 2181:2181
-    volumes:
-      - zookeeper_data:/bitnami
-    env_file:
-      - ./env_file/zookeper.env
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.1
-  kafka-saga-choreographer:
-    container_name: kafka_saga_choreographer
-    image: 'bitnami/kafka:2'
-    ports:
-      - 9092:9092
-    volumes:
-      - kafka_data:/bitnami
-    env_file:
-      - ./env_file/kafka.env
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.2
-    depends_on:
-      - zookeeper-saga-choreographer
+  # zookeeper-saga-choreographer:
+  #   container_name: zookeeper_saga_choreographer
+  #   image: 'bitnami/zookeeper:3'
+  #   ports:
+  #     - 2181:2181
+  #   volumes:
+  #     - zookeeper_data:/bitnami
+  #   env_file:
+  #     - ./env_file/zookeper.env
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.1
+  # kafka-saga-choreographer:
+  #   container_name: kafka_saga_choreographer
+  #   image: 'bitnami/kafka:2'
+  #   ports:
+  #     - 9092:9092
+  #   volumes:
+  #     - kafka_data:/bitnami
+  #   env_file:
+  #     - ./env_file/kafka.env
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.2
+  #   depends_on:
+  #     - zookeeper-saga-choreographer
+  
   rabbitmq-saga-choreographer:
     container_name: rabbitmq_saga_choreographer
     image: "rabbitmq:3-management"
@@ -37,76 +38,155 @@ services:
     networks:
       saga_choreographer:
         ipv4_address: 172.168.1.3
-  kong-database-saga-choreographer:
-    image: postgres:12-alpine
-    container_name: kong_database_saga_choreographer
+  # kong-database-saga-choreographer:
+  #   image: postgres:12-alpine
+  #   container_name: kong_database_saga_choreographer
+  #   ports:
+  #     - 5432:5432
+  #   env_file:
+  #     - ./env_file/kong_db_postgre.env
+  #   volumes:
+  #     - "db-data-kong-postgres:/var/lib/postgresql/data"
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.4
+  # kong-migrations-saga-choreographer:
+  #   container_name: kong_migrations_saga_choreographer
+  #   image: kong:1.5.0-alpine
+  #   command: kong migrations bootstrap
+  #   depends_on:
+  #     - kong-database-saga-choreographer
+  #   environment:
+  #     KONG_DATABASE: postgres
+  #     KONG_PG_DATABASE: kong
+  #     KONG_PG_HOST: kong-database-saga-choreographer
+  #     KONG_PG_USER: kong
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.5
+  #   restart: on-failure
+  # kong-migrations-up-saga-choreographer:
+  #   container_name: kong_migrations_up_saga_choreographer
+  #   image: kong:1.5.0-alpine
+  #   command: kong migrations up && kong migrations finish
+  #   depends_on:
+  #     - kong-database-saga-choreographer
+  #   environment:
+  #     KONG_DATABASE: postgres
+  #     KONG_PG_DATABASE: kong
+  #     KONG_PG_HOST: kong-database-saga-choreographer
+  #     KONG_PG_USER: kong
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.6
+  #   restart: on-failure
+  # kong-saga-choreographer:
+  #   container_name: kong_saga_choreographer
+  #   image: kong:1.5.0-alpine
+  #   ports:
+  #     - 8002:8000
+  #     - 8443:8443
+  #     - 8001:8001
+  #     - 7946:7946
+  #     - 7946:7946/udp
+  #   env_file:
+  #     - ./env_file/kong.env
+  #   links:
+  #     - kong-database-saga-choreographer
+  #   depends_on:
+  #     - kong-database-saga-choreographer
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.7
+  #   restart: on-failure
+  # kong-dashboard-saga-choreographer:
+  #   image: pgbi/kong-dashboard:v3
+  #   container_name: kong_dashboard_saga_choreographer
+  #   command: "start --kong-url http://kong-saga-choreographer:8001"
+  #   ports:
+  #     - 8070:8080
+  #   depends_on:
+  #     - kong-saga-choreographer
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.8
+  
+  # kafka-manager:
+  #   container_name: kafka-manager
+  #   image: hlebalbau/kafka-manager:1.3.3.16
+  #   depends_on:
+  #     - kafka-saga-choreographer
+  #     - zookeeper-saga-choreographer
+  #   command: -Dconfig.file=/kafka-manager/conf/application.conf -Dapplication.home=/kafkamanager
+  #   environment:
+  #     - ZK_HOSTS=zookeeper-saga-choreographer
+  #   ports:
+  #     - "8071:9000"
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.9
+  
+  # order-service-saga-choreographer:
+  #   build:
+  #     context: ./src/order-service
+  #     dockerfile: Dockerfile
+  #   container_name: order_service_saga_choreographer
+  #   volumes:
+  #     - ./src/order-service:/usr/src/node/app
+  #   ports:
+  #     - 8170:3000
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.10
+  #   tty: true
+  # mysql-order-saga-choreographer:
+  #   build:
+  #     context: ./mysql_data
+  #     dockerfile: Dockerfile
+  #   container_name: mysql_order_saga_choreographer
+  #   environment:
+  #     MYSQL_DATABASE: "order_database"
+  #     MYSQL_USER: "guest"
+  #     MYSQL_PASSWORD: "guest"
+  #     MYSQL_ROOT_PASSWORD: "root"
+  #   ports:
+  #   - '3316:3306'
+  #   volumes:
+  #   - ./mysql_data/payment_data:/var/lib/mysql:rw
+  # networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.10
+
+  # payment-service-saga-choreographer:
+  #   build:
+  #     context: ./src/order-service
+  #     dockerfile: Dockerfile
+  #   container_name: order_service_saga_choreographer
+  #   volumes:
+  #     - ./src/order-service:/usr/src/node/app
+  #   ports:
+  #     - 8171:9000
+  #   networks:
+  #     saga_choreographer:
+  #       ipv4_address: 172.168.1.11
+  #   tty: true
+  mysql-payment-saga-choreographer:
+    build:
+      context: ./mysql_data
+      dockerfile: Dockerfile
+    container_name: mysql_payment_saga_choreographer
+    environment:
+      MYSQL_DATABASE: "payment_database"
+      MYSQL_USER: "guest"
+      MYSQL_PASSWORD: "guest"
+      MYSQL_ROOT_PASSWORD: "root"
     ports:
-      - 5432:5432
-    env_file:
-      - ./env_file/kong_db_postgre.env
+    - '3317:3306'
     volumes:
-      - "db-data-kong-postgres:/var/lib/postgresql/data"
+    - ./mysql_data/payment_data:/var/lib/mysql:rw
     networks:
       saga_choreographer:
-        ipv4_address: 172.168.1.4
-  kong-migrations:
-    image: kong:1.5.0-alpine
-    command: kong migrations bootstrap
-    depends_on:
-      - kong-database-saga-choreographer
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_DATABASE: kong
-      KONG_PG_HOST: kong-database-saga-choreographer
-      KONG_PG_USER: kong
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.5
-    restart: on-failure
-  kong-migrations-up:
-    image: kong:1.5.0-alpine
-    command: kong migrations up && kong migrations finish
-    depends_on:
-      - kong-database-saga-choreographer
-    environment:
-      KONG_DATABASE: postgres
-      KONG_PG_DATABASE: kong
-      KONG_PG_HOST: kong-database-saga-choreographer
-      KONG_PG_USER: kong
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.6
-    restart: on-failure
-  kong-saga-choreographer:
-    container_name: kong_saga_choreographer
-    image: kong:1.5.0-alpine
-    ports:
-      - 8002:8000
-      - 8443:8443
-      - 8001:8001
-      - 7946:7946
-      - 7946:7946/udp
-    env_file:
-      - ./env_file/kong.env
-    links:
-      - kong-database-saga-choreographer
-    depends_on:
-      - kong-database-saga-choreographer
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.7
-    restart: on-failure
-  kong-dashboard-saga-choreographer:
-    image: pgbi/kong-dashboard:v3
-    container_name: kong_dashboard_saga_choreographer
-    command: "start --kong-url http://kong-saga-choreographer:8001"
-    ports:
-      - 8070:8080
-    depends_on:
-      - kong-saga-choreographer
-    networks:
-      saga_choreographer:
-        ipv4_address: 172.168.1.8
+        ipv4_address: 172.168.1.12
 volumes:
   zookeeper_data:
     driver: local
@@ -119,4 +199,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.168.0.0/16
+        - subnet: 172.168.0.0/32
